@@ -89,6 +89,59 @@ static uint32_t GetNextEDAWorkRequired(const CBlockIndex *pindexPrev,
     return nPow.GetCompact();
 }
 
+/**
+ * Compute the next required proof of work using the
+ * WTEMA (Weighted Target Exponential Moving Average) difficulty adjustment algorithm
+ *
+ * This algorithm is weighted-target exponential moving average.
+ * Target is calculated based on inter-block times weighted by a
+ * progressively decreasing factor for past inter-block times,
+ * according to the parameter alpha.  If the single_block_target SBT is
+ * calculated as:
+ *    SBT = prior_target * block_time / ideal_block_time
+ * then:
+ *    next_target = SBT * α + prior_target * (1 - α)
+ * Substituting and factorizing:
+ *    next_target = prior_target * α / ideal_block_time
+ *                  * (block_time + (1 / α - 1) * ideal_block_time)
+ * We use the reciprocal of alpha as an integer to avoid floating
+ * point arithmetic.  Doing so the above formula maintains precision and
+ * avoids overflows with large targets in regtest
+ *
+ * https://www.yours.org/content/the-wtema-difficulty-adjustment-algorithm-855a3405606a
+ * https://github.com/kyuupichan/difficulty/blob/302adb0fe7c123f939348e3c4100fa9df7bb2cc0/mining.py
+ */
+uint32_t GetNextWTEMAWorkRequired(const CBlockIndex *pindexPrev,
+    const Consensus::Params &params)
+{
+    if (params.fPowNoRetargeting)
+    {
+        return pindexPrev->nBits;
+    }
+
+    //Prepare previous target, then calculate the next target based on SBT (single block target)
+    //SBT is the target derived from the time between the two previous blocks only
+    const int64_t nBlockTime = pindexPrev->GetBlockTime() - pindexPrev->pprev->GetBlockTime();
+    arith_uint256 bnPriorTarget;
+    bnPriorTarget.SetCompact(pindexPrev->nBits);
+    arith_uint256 bnNextTarget(bnPriorTarget);
+    bnNextTarget *= nBlockTime + params.nPowTargetSpacing * (params.nPowAlphaReciprocal - 1);
+
+    //Constrain individual target changes to 12.5%
+    const arith_uint256 bnMaxChange(bnPriorTarget >> 3);
+    const arith_uint256 bnUpperLimit = bnPriorTarget + bnMaxChange;
+    if(bnNextTarget > bnUpperLimit) {
+        bnNextTarget = bnUpperLimit;
+    } else {
+        const arith_uint256 bnLowerLimit = bnPriorTarget - bnMaxChange;
+        if(bnNextTarget < bnLowerLimit) {
+            bnNextTarget = bnLowerLimit;
+        }
+    }
+
+    return bnNextTarget.GetCompact();
+}
+
 uint32_t GetNextWorkRequired(const CBlockIndex *pindexPrev, const CBlockHeader *pblock, const Consensus::Params &params)
 {
     // Genesis block
