@@ -483,21 +483,6 @@ std::string FormatStateMessage(const CValidationState &state)
         state.GetDebugMessage().empty() ? "" : ", " + state.GetDebugMessage(), state.GetRejectCode());
 }
 
-static bool IsDAAEnabled(const Consensus::Params &consensusparams, int nHeight)
-{
-    return nHeight >= consensusparams.daaHeight;
-}
-
-bool IsDAAEnabled(const Consensus::Params &consensusparams, const CBlockIndex *pindexPrev)
-{
-    if (pindexPrev == nullptr)
-    {
-        return false;
-    }
-
-    return IsDAAEnabled(consensusparams, pindexPrev->nHeight);
-}
-
 bool IsMay152018Enabled(const Consensus::Params &consensusparams, const CBlockIndex *pindexPrev)
 {
     if (pindexPrev == nullptr)
@@ -1614,16 +1599,6 @@ static uint32_t GetBlockScriptFlags(const CBlockIndex *pindex, const Consensus::
     {
         flags |= SCRIPT_VERIFY_STRICTENC;
         flags |= SCRIPT_ENABLE_SIGHASH_FORKID;
-    }
-
-    // If the DAA HF is enabled, we start rejecting transaction that use a high
-    // s in their signature. We also make sure that signature that are supposed
-    // to fail (for instance in multisig or other forms of smart contracts) are
-    // null.
-    if (IsDAAEnabled(consensusparams, pindex->pprev))
-    {
-        flags |= SCRIPT_VERIFY_LOW_S;
-        flags |= SCRIPT_VERIFY_NULLFAIL;
     }
 
     // The May 15, 2018 HF enable a set of opcodes.

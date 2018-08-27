@@ -205,40 +205,40 @@ BOOST_AUTO_TEST_CASE(cash_difficulty_test)
     }
 
     CBlockHeader blkHeaderDummy;
-    uint32_t nBits = GetNextCashWorkRequired(&blocks[2049], &blkHeaderDummy, params);
+    uint32_t nBits = GetNextWorkRequired(&blocks[2049], &blkHeaderDummy, params);
 
     // Difficulty stays the same as long as we produce a block every 10 mins.
     for (size_t j = 0; j < 10; i++, j++)
     {
         blocks[i] = GetBlockIndex(&blocks[i - 1], 600, nBits);
-        BOOST_CHECK_EQUAL(GetNextCashWorkRequired(&blocks[i], &blkHeaderDummy, params), nBits);
+        BOOST_CHECK_EQUAL(GetNextWorkRequired(&blocks[i], &blkHeaderDummy, params), nBits);
     }
 
     // Make sure we skip over blocks that are out of wack. To do so, we produce
     // a block that is far in the future, and then produce a block with the
     // expected timestamp.
     blocks[i] = GetBlockIndex(&blocks[i - 1], 6000, nBits);
-    BOOST_CHECK_EQUAL(GetNextCashWorkRequired(&blocks[i++], &blkHeaderDummy, params), nBits);
+    BOOST_CHECK_EQUAL(GetNextWorkRequired(&blocks[i++], &blkHeaderDummy, params), nBits);
     blocks[i] = GetBlockIndex(&blocks[i - 1], 2 * 600 - 6000, nBits);
-    BOOST_CHECK_EQUAL(GetNextCashWorkRequired(&blocks[i++], &blkHeaderDummy, params), nBits);
+    BOOST_CHECK_EQUAL(GetNextWorkRequired(&blocks[i++], &blkHeaderDummy, params), nBits);
 
     // The system should continue unaffected by the block with a bogous
     // timestamps.
     for (size_t j = 0; j < 20; i++, j++)
     {
         blocks[i] = GetBlockIndex(&blocks[i - 1], 600, nBits);
-        BOOST_CHECK_EQUAL(GetNextCashWorkRequired(&blocks[i], &blkHeaderDummy, params), nBits);
+        BOOST_CHECK_EQUAL(GetNextWorkRequired(&blocks[i], &blkHeaderDummy, params), nBits);
     }
 
     // We start emitting blocks slightly faster. The first block has no impact.
     blocks[i] = GetBlockIndex(&blocks[i - 1], 550, nBits);
-    BOOST_CHECK_EQUAL(GetNextCashWorkRequired(&blocks[i++], &blkHeaderDummy, params), nBits);
+    BOOST_CHECK_EQUAL(GetNextWorkRequired(&blocks[i++], &blkHeaderDummy, params), nBits);
 
     // Now we should see difficulty increase slowly.
     for (size_t j = 0; j < 10; i++, j++)
     {
         blocks[i] = GetBlockIndex(&blocks[i - 1], 550, nBits);
-        const uint32_t nextBits = GetNextCashWorkRequired(&blocks[i], &blkHeaderDummy, params);
+        const uint32_t nextBits = GetNextWorkRequired(&blocks[i], &blkHeaderDummy, params);
 
         arith_uint256 currentTarget;
         currentTarget.SetCompact(nBits);
@@ -259,7 +259,7 @@ BOOST_AUTO_TEST_CASE(cash_difficulty_test)
     for (size_t j = 0; j < 20; i++, j++)
     {
         blocks[i] = GetBlockIndex(&blocks[i - 1], 10, nBits);
-        const uint32_t nextBits = GetNextCashWorkRequired(&blocks[i], &blkHeaderDummy, params);
+        const uint32_t nextBits = GetNextWorkRequired(&blocks[i], &blkHeaderDummy, params);
 
         arith_uint256 currentTarget;
         currentTarget.SetCompact(nBits);
@@ -279,7 +279,7 @@ BOOST_AUTO_TEST_CASE(cash_difficulty_test)
     // We start to emit blocks significantly slower. The first block has no
     // impact.
     blocks[i] = GetBlockIndex(&blocks[i - 1], 6000, nBits);
-    nBits = GetNextCashWorkRequired(&blocks[i++], &blkHeaderDummy, params);
+    nBits = GetNextWorkRequired(&blocks[i++], &blkHeaderDummy, params);
 
     // Check the actual value.
     BOOST_CHECK_EQUAL(nBits, 0x1c0d9222);
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(cash_difficulty_test)
     for (size_t j = 0; j < 93; i++, j++)
     {
         blocks[i] = GetBlockIndex(&blocks[i - 1], 6000, nBits);
-        const uint32_t nextBits = GetNextCashWorkRequired(&blocks[i], &blkHeaderDummy, params);
+        const uint32_t nextBits = GetNextWorkRequired(&blocks[i], &blkHeaderDummy, params);
 
         arith_uint256 currentTarget;
         currentTarget.SetCompact(nBits);
@@ -309,7 +309,7 @@ BOOST_AUTO_TEST_CASE(cash_difficulty_test)
     // Due to the window of time being bounded, next block's difficulty actually
     // gets harder.
     blocks[i] = GetBlockIndex(&blocks[i - 1], 6000, nBits);
-    nBits = GetNextCashWorkRequired(&blocks[i++], &blkHeaderDummy, params);
+    nBits = GetNextWorkRequired(&blocks[i++], &blkHeaderDummy, params);
     BOOST_CHECK_EQUAL(nBits, 0x1c2ee9bf);
 
     // And goes down again. It takes a while due to the window being bounded and
@@ -317,7 +317,7 @@ BOOST_AUTO_TEST_CASE(cash_difficulty_test)
     for (size_t j = 0; j < 192; i++, j++)
     {
         blocks[i] = GetBlockIndex(&blocks[i - 1], 6000, nBits);
-        const uint32_t nextBits = GetNextCashWorkRequired(&blocks[i], &blkHeaderDummy, params);
+        const uint32_t nextBits = GetNextWorkRequired(&blocks[i], &blkHeaderDummy, params);
 
         arith_uint256 currentTarget;
         currentTarget.SetCompact(nBits);
@@ -340,7 +340,7 @@ BOOST_AUTO_TEST_CASE(cash_difficulty_test)
     for (size_t j = 0; j < 5; i++, j++)
     {
         blocks[i] = GetBlockIndex(&blocks[i - 1], 6000, nBits);
-        const uint32_t nextBits = GetNextCashWorkRequired(&blocks[i], &blkHeaderDummy, params);
+        const uint32_t nextBits = GetNextWorkRequired(&blocks[i], &blkHeaderDummy, params);
 
         // Check the difficulty stays constant.
         BOOST_CHECK_EQUAL(nextBits, powLimitBits);

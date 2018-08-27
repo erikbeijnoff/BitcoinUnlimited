@@ -333,9 +333,6 @@ CBlockIndex *InsertBlockIndex(uint256 hash);
 /** Get statistics from node state */
 bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats);
 
-/** Check is Cash HF has activated. */
-bool IsDAAEnabled(const Consensus::Params &consensusparams, const CBlockIndex *pindexPrev);
-
 /**
    Determine whether free transactions are subject to rate limiting. If -limitfreerelay is not zero then rate limiting
    for free txns will be in effect. If it is zero, then no free transactions will be allowed to enter the memory pool.

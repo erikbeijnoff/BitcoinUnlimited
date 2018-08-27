@@ -130,8 +130,6 @@ public:
 
         // Aug, 1 2017 hard fork
         consensus.uahfHeight = 478559;
-        // Nov, 13 2017 hard fork
-        consensus.daaHeight = 504031;
         // May, 15 2018 hard fork
         consensus.may2018activationTime = 1526400000;
 
@@ -199,10 +197,6 @@ public:
                 250000, uint256S("0x000000000000003887df1f29024b06fc2200b55f8af8f35453d7be294df2d214"))(
                 279000, uint256S("0x0000000000000001ae8c72a0b0c301f67e3afca10e819efa9041e458e9bd7e40"))(
                 295000, uint256S("0x00000000000000004d9b4ef50f0f9d686fd69db2e03af35a100370c64632a983"))(
-                // August 1st 2017 CASH fork (UAHF)
-                478559, uint256S("0x000000000000000000651ef99cb9fcbe0dadde1d424bd9f15ff20136191a5eec"))(
-                // November 13th 2017 new DAA fork
-                504031, uint256S("0x0000000000000000011ebf65b60d0a3de80b8175be709d653b4c1a1beeb6ab9c"))(
                 // May 15th 2018 re-enable op_codes and 32 MB max block size
                 530359, uint256S("0x0000000000000000011ada8bd08f46074f44a8f155396f43e38acf9501c49103")),
             1526410186, // * UNIX timestamp of last checkpoint block
@@ -256,8 +250,6 @@ public:
 
         // Aug, 1 2017 hard fork
         consensus.uahfHeight = 0;
-        // Nov, 13 hard fork
-        consensus.daaHeight = 0;
         // May, 15 2018 hard fork
         consensus.may2018activationTime = 1526400000;
 
@@ -325,8 +317,6 @@ public:
 
         // Aug, 1 2017 hard fork
         consensus.uahfHeight = 1155876;
-        // Nov, 13 hard fork
-        consensus.daaHeight = 1188697;
         // May, 15 2018 hard fork
         consensus.may2018activationTime = 1526400000;
 
@@ -425,8 +415,6 @@ public:
 
         // Hard fork is always enabled on regtest.
         consensus.uahfHeight = 0;
-        // Nov, 13 hard fork is always on on regtest.
-        consensus.daaHeight = 0;
         // May, 15 2018 hard fork
         consensus.may2018activationTime = 1526400000;
 

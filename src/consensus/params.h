@@ -143,8 +143,6 @@ struct Params
     int64_t DifficultyAdjustmentInterval() const { return nPowTargetTimespan / nPowTargetSpacing; }
     /** UAHF Aug 1st 2017 block height */
     int uahfHeight;
-    /** Block height at which the new DAA becomes active */
-    int daaHeight;
     /** May 15, 2018 Activation time */
     int may2018activationTime;
 };
