@@ -545,7 +545,7 @@ public:
 
     const CMessageHeader::MessageStartChars &GetMagic(const CChainParams &params) const
     {
-        return params.CashMessageStart();
+        return params.MessageStart();
     }
 
     CNode *AddRef()

@@ -73,7 +73,6 @@ public:
     /** Modifiable consensus parameters added by bip135, is not threadsafe, only use during initializtion */
     Consensus::Params &GetModifiableConsensus() { return consensus; }
     const CMessageHeader::MessageStartChars &MessageStart() const { return pchMessageStart; }
-    const CMessageHeader::MessageStartChars &CashMessageStart() const { return pchCashMessageStart; }
     int GetDefaultPort() const { return nDefaultPort; }
     const CBlock &GenesisBlock() const { return genesis; }
     /** Make miner wait to have peers to avoid wasting work */
@@ -98,7 +97,6 @@ protected:
     CChainParams() {}
     Consensus::Params consensus;
     CMessageHeader::MessageStartChars pchMessageStart;
-    CMessageHeader::MessageStartChars pchCashMessageStart;
     int nDefaultPort;
     uint64_t nPruneAfterHeight;
     std::vector<CDNSSeedData> vSeeds;
