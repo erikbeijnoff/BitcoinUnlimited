@@ -26,7 +26,6 @@
 #include "script/sign.h"
 #include "timedata.h"
 #include "txmempool.h"
-#include "uahf_fork.h"
 #include "ui_interface.h"
 #include "util.h"
 #include "utilmoneystr.h"
@@ -2439,23 +2438,17 @@ bool CWallet::CreateTransaction(const vector<CRecipient> &vecSend,
                 }
 
                 // Sign
-                unsigned int sighashType = SIGHASH_ALL;
-                if (IsUAHFforkActiveOnNextBlock(chainActive.Tip()->nHeight) && walletSignWithForkSig.Value())
-                {
-                    sighashType |= SIGHASH_FORKID;
-                }
                 int nIn = 0;
                 CTransaction txNewConst(txNew);
                 for (const PAIRTYPE(const CWalletTx *, unsigned int) & coin : setCoins)
                 {
                     bool signSuccess;
                     const CScript &scriptPubKey = coin.first->vout[coin.second].scriptPubKey;
-                    CAmount amountIn = coin.first->vout[coin.second].nValue;
                     CScript &scriptSigRes = txNew.vin[nIn].scriptSig;
                     if (sign)
                     {
                         signSuccess =
-                            ProduceSignature(TransactionSignatureCreator(this, &txNewConst, nIn, amountIn, sighashType),
+                            ProduceSignature(TransactionSignatureCreator(this, &txNewConst, nIn, SIGHASH_ALL),
                                 scriptPubKey, scriptSigRes);
                     }
                     else

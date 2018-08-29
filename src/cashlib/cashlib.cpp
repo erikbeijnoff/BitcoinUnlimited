@@ -126,7 +126,6 @@ extern "C" int GetPubKey(unsigned char *keyData, unsigned char *result, unsigned
 extern "C" int SignTx(unsigned char *txData,
     int txbuflen,
     unsigned int inputIdx,
-    int64_t inputAmount,
     unsigned char *prevoutScript,
     uint32_t priorScriptLen,
     uint32_t nHashType,
@@ -134,7 +133,7 @@ extern "C" int SignTx(unsigned char *txData,
     unsigned char *result,
     unsigned int resultLen)
 {
-    DbgAssert(nHashType & SIGHASH_FORKID, return 0);
+    DbgAssert(nHashType, return 0);
 
     if (!sigInited)
     {
@@ -162,7 +161,7 @@ extern "C" int SignTx(unsigned char *txData,
     CKey key = LoadKey(keyData);
 
     size_t nHashedOut = 0;
-    uint256 sighash = SignatureHash(priorScript, tx, inputIdx, nHashType, inputAmount, &nHashedOut);
+    uint256 sighash = SignatureHash(priorScript, tx, inputIdx, nHashType, &nHashedOut);
     std::vector<unsigned char> sig;
     if (!key.Sign(sighash, sig))
     {

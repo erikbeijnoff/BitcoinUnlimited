@@ -141,8 +141,6 @@ struct Params
     int64_t nPowTargetSpacing;
     int64_t nPowTargetTimespan;
     int64_t DifficultyAdjustmentInterval() const { return nPowTargetTimespan / nPowTargetSpacing; }
-    /** UAHF Aug 1st 2017 block height */
-    int uahfHeight;
     /** May 15, 2018 Activation time */
     int may2018activationTime;
 };

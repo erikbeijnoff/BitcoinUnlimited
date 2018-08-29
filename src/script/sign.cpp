@@ -20,10 +20,9 @@ typedef std::vector<unsigned char> valtype;
 TransactionSignatureCreator::TransactionSignatureCreator(const CKeyStore *keystoreIn,
     const CTransaction *txToIn,
     unsigned int nInIn,
-    const CAmount &amountIn,
     uint32_t nHashTypeIn)
-    : BaseSignatureCreator(keystoreIn), txTo(txToIn), nIn(nInIn), amount(amountIn), nHashType(nHashTypeIn),
-      checker(txTo, nIn, amount, (nHashTypeIn & SIGHASH_FORKID) ? SCRIPT_ENABLE_SIGHASH_FORKID : 0)
+    : BaseSignatureCreator(keystoreIn), txTo(txToIn), nIn(nInIn), nHashType(nHashTypeIn),
+      checker(txTo, nIn)
 {
 }
 
@@ -35,7 +34,7 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char> &vchSig,
     if (!keystore->GetKey(address, key))
         return false;
 
-    uint256 hash = SignatureHash(scriptCode, *txTo, nIn, nHashType, amount);
+    uint256 hash = SignatureHash(scriptCode, *txTo, nIn, nHashType);
     if (!key.Sign(hash, vchSig))
         return false;
     vchSig.push_back((unsigned char)nHashType);
@@ -150,21 +149,20 @@ bool ProduceSignature(const BaseSignatureCreator &creator, const CScript &fromPu
 
     // Test solution
     return VerifyScript(
-        scriptSig, fromPubKey, STANDARD_SCRIPT_VERIFY_FLAGS | SCRIPT_ENABLE_SIGHASH_FORKID, creator.Checker());
+        scriptSig, fromPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, creator.Checker());
 }
 
 bool SignSignature(const CKeyStore &keystore,
     const CScript &fromPubKey,
     CMutableTransaction &txTo,
     unsigned int nIn,
-    const CAmount &amount,
     uint32_t nHashType)
 {
     assert(nIn < txTo.vin.size());
     CTxIn &txin = txTo.vin[nIn];
 
     CTransaction txToConst(txTo);
-    TransactionSignatureCreator creator(&keystore, &txToConst, nIn, amount, nHashType);
+    TransactionSignatureCreator creator(&keystore, &txToConst, nIn, nHashType);
 
     return ProduceSignature(creator, fromPubKey, txin.scriptSig);
 }
@@ -180,7 +178,7 @@ bool SignSignature(const CKeyStore &keystore,
     assert(txin.prevout.n < txFrom.vout.size());
     const CTxOut &txout = txFrom.vout[txin.prevout.n];
 
-    return SignSignature(keystore, txout.scriptPubKey, txTo, nIn, txout.nValue, nHashType);
+    return SignSignature(keystore, txout.scriptPubKey, txTo, nIn, nHashType);
 }
 
 static CScript PushAll(const vector<valtype> &values)

@@ -347,16 +347,14 @@ protected:
             flags |= SCRIPT_VERIFY_P2SH;
 
         ScriptError error;
-        unsigned char sighashtype;
         CScript script_sig(scriptsig_raw), script_pubkey(scriptpubkey_raw);
         const bool result =
-            VerifyScript(script_sig, script_pubkey, flags, BaseSignatureChecker(), &error, &sighashtype);
+            VerifyScript(script_sig, script_pubkey, flags, BaseSignatureChecker(), &error);
 
         if (produce_output)
         {
             CDataStream out(output, SER_NETWORK, INIT_PROTO_VERSION);
             out << result;
-            out << sighashtype;
             out << scriptsig_raw;
             out << scriptpubkey_raw;
             output.insert(output.begin(), out.begin(), out.end());

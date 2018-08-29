@@ -217,7 +217,7 @@ static bool IsDefinedHashtypeSignature(const valtype &vchSig)
     {
         return false;
     }
-    uint32_t nHashType = GetHashType(vchSig) & ~(SIGHASH_ANYONECANPAY | SIGHASH_FORKID);
+    uint32_t nHashType = GetHashType(vchSig) & ~(SIGHASH_ANYONECANPAY);
     if (nHashType < SIGHASH_ALL || nHashType > SIGHASH_SINGLE)
         return false;
 
@@ -332,8 +332,7 @@ bool EvalScript(vector<vector<unsigned char> > &stack,
     const CScript &script,
     unsigned int flags,
     const BaseSignatureChecker &checker,
-    ScriptError *serror,
-    unsigned char *sighashtype)
+    ScriptError *serror)
 {
     static const CScriptNum bnZero(0);
     static const CScriptNum bnOne(1);
@@ -350,8 +349,6 @@ bool EvalScript(vector<vector<unsigned char> > &stack,
     valtype vchPushValue;
     vector<bool> vfExec;
     vector<valtype> altstack;
-    if (sighashtype)
-        *sighashtype = 0;
 
     set_error(serror, SCRIPT_ERR_UNKNOWN_ERROR);
     if (script.size() > MAX_SCRIPT_SIZE)
@@ -1122,14 +1119,6 @@ bool EvalScript(vector<vector<unsigned char> > &stack,
 
                     // Subset of script starting at the most recent codeseparator
                     CScript scriptCode(pbegincodehash, pend);
-
-                    // Drop the signature in scripts when SIGHASH_FORKID is
-                    // not used.
-                    uint32_t nHashType = GetHashType(vchSig);
-                    // BU remember the sighashtype so we can use it to choose when to allow this tx
-                    if (sighashtype)
-                        *sighashtype |= nHashType;
-
                     // Drop the signature, since there's no way for a signature to sign itself
                     scriptCode.FindAndDelete(CScript(vchSig));
 
@@ -1195,13 +1184,6 @@ bool EvalScript(vector<vector<unsigned char> > &stack,
                     for (int k = 0; k < nSigsCount; k++)
                     {
                         valtype &vchSig = stacktop(-isig - k);
-
-                        // Drop the signature in scripts when SIGHASH_FORKID
-                        // is not used.
-                        uint32_t nHashType = GetHashType(vchSig);
-                        // BU remember the sighashtype so we can use it to choose when to allow this tx
-                        if (sighashtype)
-                            *sighashtype |= nHashType;
                         scriptCode.FindAndDelete(CScript(vchSig));
                     }
 
@@ -1423,13 +1405,6 @@ bool TransactionSignatureChecker::VerifySignature(const std::vector<unsigned cha
     return pubkey.Verify(sighash, vchSig);
 }
 
-extern uint256 SignatureHashLegacy(const CScript &scriptCode,
-    const CTransaction &txTo,
-    unsigned int nIn,
-    uint32_t nHashType,
-    const CAmount &amount,
-    size_t *nHashedOut);
-
 
 bool TransactionSignatureChecker::CheckSig(const vector<unsigned char> &vchSigIn,
     const vector<unsigned char> &vchPubKey,
@@ -1446,21 +1421,8 @@ bool TransactionSignatureChecker::CheckSig(const vector<unsigned char> &vchSigIn
     int nHashType = vchSig.back();
     vchSig.pop_back();
 
-    uint256 sighash;
     size_t nHashed = 0;
-    // If BCH sighash is possible, check the bit, otherwise ignore the bit.  This is needed because
-    // the bit is undefined (can be any value) before the fork. See block 264084 tx 102
-    if (nFlags & SCRIPT_ENABLE_SIGHASH_FORKID)
-    {
-        if (nHashType & SIGHASH_FORKID)
-            sighash = SignatureHash(scriptCode, *txTo, nIn, nHashType, amount, &nHashed);
-        else
-            return false;
-    }
-    else
-    {
-        sighash = SignatureHashLegacy(scriptCode, *txTo, nIn, nHashType, amount, &nHashed);
-    }
+    uint256 sighash = SignatureHash(scriptCode, *txTo, nIn, nHashType, &nHashed);
     nBytesHashed += nHashed;
     ++nSigops;
 
@@ -1555,8 +1517,7 @@ bool VerifyScript(const CScript &scriptSig,
     const CScript &scriptPubKey,
     unsigned int flags,
     const BaseSignatureChecker &checker,
-    ScriptError *serror,
-    unsigned char *sighashtype)
+    ScriptError *serror)
 {
     set_error(serror, SCRIPT_ERR_UNKNOWN_ERROR);
 
@@ -1566,12 +1527,12 @@ bool VerifyScript(const CScript &scriptSig,
     }
 
     vector<vector<unsigned char> > stack, stackCopy;
-    if (!EvalScript(stack, scriptSig, flags, checker, serror, sighashtype))
+    if (!EvalScript(stack, scriptSig, flags, checker, serror))
         // serror is set
         return false;
     if (flags & SCRIPT_VERIFY_P2SH)
         stackCopy = stack;
-    if (!EvalScript(stack, scriptPubKey, flags, checker, serror, sighashtype))
+    if (!EvalScript(stack, scriptPubKey, flags, checker, serror))
         // serror is set
         return false;
     if (stack.empty())
@@ -1598,7 +1559,7 @@ bool VerifyScript(const CScript &scriptSig,
         CScript pubKey2(pubKeySerialized.begin(), pubKeySerialized.end());
         popstack(stack);
 
-        if (!EvalScript(stack, pubKey2, flags, checker, serror, sighashtype))
+        if (!EvalScript(stack, pubKey2, flags, checker, serror))
             // serror is set
             return false;
         if (stack.empty())

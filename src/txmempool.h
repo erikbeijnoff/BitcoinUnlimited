@@ -100,7 +100,6 @@ private:
     CAmount nModFeesWithDescendants; //! ... and total fees (all including us)
 
 public:
-    unsigned char sighashType;
     CTxMemPoolEntry();
     CTxMemPoolEntry(const CTransactionRef &_tx,
         const CAmount &_nFee,

@@ -29,7 +29,6 @@ CTxMemPoolEntry::CTxMemPoolEntry()
     nUsageSize = 0;
     nCountWithDescendants = 0;
     feeDelta = 0;
-    sighashType = 0;
 }
 
 CTxMemPoolEntry::CTxMemPoolEntry(const CTransactionRef &_tx,
@@ -55,7 +54,6 @@ CTxMemPoolEntry::CTxMemPoolEntry(const CTransactionRef &_tx,
     nModFeesWithDescendants = nFee;
     CAmount nValueIn = tx->GetValueOut() + nFee;
     assert(inChainInputValue <= nValueIn);
-    sighashType = 0;
     feeDelta = 0;
 }
 

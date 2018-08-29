@@ -10,7 +10,6 @@ import decimal
 SIGHASH_ALL = 1
 SIGHASH_NONE = 2
 SIGHASH_SINGLE = 3
-SIGHASH_FORKID = 0x40
 SIGHASH_ANYONECANPAY = 0x80
 
 BCH = 100000000
@@ -74,7 +73,7 @@ def bin2hex(data):
     raise Error("cashlib bin2hex error")
 
 
-def signTxInput(tx, inputIdx, inputAmount, prevoutScript, key, sigHashType=SIGHASH_FORKID | SIGHASH_ALL):
+def signTxInput(tx, inputIdx, inputAmount, prevoutScript, key, sigHashType=SIGHASH_ALL):
     """Signs one input of a transaction.  Signature is returned.  You must use this signature to construct the spend script
     Parameters:
     tx: Transaction in object, hex or binary format
@@ -82,20 +81,18 @@ def signTxInput(tx, inputIdx, inputAmount, prevoutScript, key, sigHashType=SIGHA
     inputAmount: how many Satoshi's does this input add to the transaction?
     prevoutScript: the script that this input is spending.
     key: sign using this private key in binary format
-    sigHashType: flags describing what should be signed (SIGHASH_FORKID | SIGHASH_ALL (default), SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY)
+    sigHashType: flags describing what should be signed (SIGHASH_ALL (default), SIGHASH_NONE, SIGHASH_SINGLE, SIGHASH_ANYONECANPAY)
     """
-    assert (sigHashType & SIGHASH_FORKID) > 0, "Did you forget to indicate the bitcoin cash hashing algorithm?"
+    assert (sigHashType) > 0, "Did you forget to indicate the bitcoin cash hashing algorithm?"
     if type(tx) == str:
         tx = unhexlify(tx)
     elif type(tx) != bytes:
         tx = tx.serialize()
     if type(prevoutScript) == str:
         prevoutScript = unhexlify(prevoutScript)
-    if type(inputAmount) is decimal.Decimal:
-        inputAmount = int(inputAmount * BCH)
 
     result = create_string_buffer(100)
-    siglen = cashlib.SignTx(tx, len(tx), inputIdx, c_longlong(inputAmount), prevoutScript,
+    siglen = cashlib.SignTx(tx, len(tx), inputIdx, prevoutScript,
                             len(prevoutScript), sigHashType, key, result, 100)
     if siglen == 0:
         raise Error("cashlib signtx error")

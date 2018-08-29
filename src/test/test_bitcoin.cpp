@@ -139,7 +139,6 @@ CTxMemPoolEntry TestMemPoolEntryHelper::FromTx(const CTransaction &txn, CTxMemPo
 
     CTxMemPoolEntry ret(MakeTransactionRef(txn), nFee, nTime, dPriority, nHeight, hasNoDependencies, inChainValue,
         spendsCoinbase, sigOpCount, lp);
-    ret.sighashType = SIGHASH_ALL; // For testing, give the transaction any valid sighashtype
     return ret;
 }
 

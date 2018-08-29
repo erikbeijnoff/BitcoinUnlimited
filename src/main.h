@@ -387,8 +387,7 @@ bool CheckInputs(const CTransaction &tx,
     unsigned int flags,
     bool cacheStore,
     ValidationResourceTracker *resourceTracker,
-    std::vector<CScriptCheck> *pvChecks = nullptr,
-    unsigned char *sighashType = nullptr);
+    std::vector<CScriptCheck> *pvChecks = nullptr);
 
 
 /** Apply the effects of this transaction on the UTXO set represented by view */

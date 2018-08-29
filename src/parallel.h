@@ -28,7 +28,6 @@ class CScriptCheck
 protected:
     ValidationResourceTracker *resourceTracker;
     CScript scriptPubKey;
-    CAmount amount;
     const CTransaction *ptxTo;
     unsigned int nIn;
     unsigned int nFlags;
@@ -36,22 +35,20 @@ protected:
     ScriptError error;
 
 public:
-    unsigned char sighashType;
     CScriptCheck()
-        : resourceTracker(nullptr), amount(0), ptxTo(0), nIn(0), nFlags(0), cacheStore(false),
-          error(SCRIPT_ERR_UNKNOWN_ERROR), sighashType(0)
+        : resourceTracker(nullptr), ptxTo(0), nIn(0), nFlags(0), cacheStore(false),
+          error(SCRIPT_ERR_UNKNOWN_ERROR)
     {
     }
 
     CScriptCheck(ValidationResourceTracker *resourceTrackerIn,
         const CScript &scriptPubKeyIn,
-        const CAmount amountIn,
         const CTransaction &txToIn,
         unsigned int nInIn,
         unsigned int nFlagsIn,
         bool cacheIn)
-        : resourceTracker(resourceTrackerIn), scriptPubKey(scriptPubKeyIn), amount(amountIn), ptxTo(&txToIn),
-          nIn(nInIn), nFlags(nFlagsIn), cacheStore(cacheIn), error(SCRIPT_ERR_UNKNOWN_ERROR), sighashType(0)
+        : resourceTracker(resourceTrackerIn), scriptPubKey(scriptPubKeyIn), ptxTo(&txToIn),
+          nIn(nInIn), nFlags(nFlagsIn), cacheStore(cacheIn), error(SCRIPT_ERR_UNKNOWN_ERROR)
     {
     }
 
@@ -62,12 +59,10 @@ public:
         std::swap(resourceTracker, check.resourceTracker);
         scriptPubKey.swap(check.scriptPubKey);
         std::swap(ptxTo, check.ptxTo);
-        std::swap(amount, check.amount);
         std::swap(nIn, check.nIn);
         std::swap(nFlags, check.nFlags);
         std::swap(cacheStore, check.cacheStore);
         std::swap(error, check.error);
-        std::swap(sighashType, check.sighashType);
     }
 
     ScriptError GetScriptError() const { return error; }

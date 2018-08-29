@@ -144,9 +144,6 @@ BOOST_AUTO_TEST_CASE(sighash_test)
     {
         int nHashType = insecure_rand();
 
-        // Clear forkid
-        nHashType &= ~SIGHASH_FORKID;
-
         CMutableTransaction txTo;
         RandomTransaction(txTo, (nHashType & 0x1f) == SIGHASH_SINGLE);
         CScript scriptCode;
@@ -155,7 +152,7 @@ BOOST_AUTO_TEST_CASE(sighash_test)
 
         uint256 sh, sho;
         sho = SignatureHashOld(scriptCode, txTo, nIn, nHashType);
-        sh = SignatureHash(scriptCode, txTo, nIn, nHashType, 0, 0);
+        sh = SignatureHash(scriptCode, txTo, nIn, nHashType, 0);
 #if defined(PRINT_SIGHASH_JSON)
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
         ss << txTo;
@@ -227,7 +224,7 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
             continue;
         }
 
-        sh = SignatureHash(scriptCode, tx, nIn, nHashType, 0, 0);
+        sh = SignatureHash(scriptCode, tx, nIn, nHashType, 0);
         assert(sh != SIGNATURE_HASH_ERROR);
         BOOST_CHECK_MESSAGE(sh.GetHex() == sigHashHex, strTest);
     }
@@ -241,7 +238,7 @@ BOOST_AUTO_TEST_CASE(sighash_test_fail)
     const int nHashType = 0;
     // should fail because nIn point is invalid
     // Note that this basically broken behavior of SignatureHashLegacy()
-    uint256 hash = SignatureHash(scriptCode, tx, nIn, nHashType, 0, 0);
+    uint256 hash = SignatureHash(scriptCode, tx, nIn, nHashType, 0);
     BOOST_CHECK(hash == SIGNATURE_HASH_ERROR);
 }
 BOOST_AUTO_TEST_SUITE_END()

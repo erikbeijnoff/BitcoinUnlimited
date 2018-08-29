@@ -71,7 +71,7 @@ static void VerifyScriptBench(benchmark::State &state)
     CTransaction txCredit = BuildCreditingTransaction(scriptPubKey);
     CMutableTransaction txSpend = BuildSpendingTransaction(scriptSig, txCredit);
     CScript &ssig = txSpend.vin[0].scriptSig;
-    uint256 sighash = SignatureHash(witScriptPubkey, txSpend, 0, SIGHASH_ALL, txCredit.vout[0].nValue);
+    uint256 sighash = SignatureHash(witScriptPubkey, txSpend, 0, SIGHASH_ALL);
     assert(sighash != SIGNATURE_HASH_ERROR);
     std::vector<unsigned char> sig1;
     key.Sign(sighash, sig1);
@@ -85,7 +85,7 @@ static void VerifyScriptBench(benchmark::State &state)
     {
         ScriptError err;
         bool success = VerifyScript(txSpend.vin[0].scriptSig, txCredit.vout[0].scriptPubKey, flags,
-            MutableTransactionSignatureChecker(&txSpend, 0, txCredit.vout[0].nValue), &err);
+            MutableTransactionSignatureChecker(&txSpend, 0), &err);
         assert(err == SCRIPT_ERR_OK);
         assert(success);
     }

@@ -392,8 +392,6 @@ static bool findSighashFlags(int &flags, const string &flagStr)
             flags = SIGHASH_SINGLE;
         else if (boost::iequals(s, "ANYONECANPAY"))
             flags |= SIGHASH_ANYONECANPAY;
-        else if (boost::iequals(s, "FORKID"))
-            flags |= SIGHASH_FORKID;
         else
         {
             return false;
@@ -529,7 +527,7 @@ static void MutateTxSign(CMutableTransaction &tx, const string &flagStr)
 
     const CKeyStore &keystore = tempKeystore;
 
-    bool fHashSingle = ((nHashType & ~(SIGHASH_ANYONECANPAY | SIGHASH_FORKID)) == SIGHASH_SINGLE);
+    bool fHashSingle = ((nHashType & ~(SIGHASH_ANYONECANPAY)) == SIGHASH_SINGLE);
 
     // Sign what we can:
     for (unsigned int i = 0; i < mergedTx.vin.size(); i++)
@@ -544,21 +542,20 @@ static void MutateTxSign(CMutableTransaction &tx, const string &flagStr)
             continue;
         }
         const CScript &prevPubKey = coin.out.scriptPubKey;
-        const CAmount &amount = coin.out.nValue;
 
         txin.scriptSig.clear();
         // Only sign SIGHASH_SINGLE if there's a corresponding output:
         if (!fHashSingle || (i < mergedTx.vout.size()))
-            SignSignature(keystore, prevPubKey, mergedTx, i, amount, nHashType);
+            SignSignature(keystore, prevPubKey, mergedTx, i, nHashType);
 
         // ... and merge in other signatures:
         for (const CTransaction &txv : txVariants)
         {
-            txin.scriptSig = CombineSignatures(prevPubKey, MutableTransactionSignatureChecker(&mergedTx, i, amount),
+            txin.scriptSig = CombineSignatures(prevPubKey, MutableTransactionSignatureChecker(&mergedTx, i),
                 txin.scriptSig, txv.vin[i].scriptSig);
         }
         if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS,
-                MutableTransactionSignatureChecker(&mergedTx, i, amount)))
+                MutableTransactionSignatureChecker(&mergedTx, i)))
             fComplete = false;
     }
 

@@ -128,8 +128,6 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].windowsize = 2016;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].threshold = 1916; // 95% of 2016
 
-        // Aug, 1 2017 hard fork
-        consensus.uahfHeight = 478559;
         // May, 15 2018 hard fork
         consensus.may2018activationTime = 1526400000;
 
@@ -248,8 +246,6 @@ public:
         nDefaultPort = DEFAULT_NOLNET_PORT;
         nPruneAfterHeight = 100000;
 
-        // Aug, 1 2017 hard fork
-        consensus.uahfHeight = 0;
         // May, 15 2018 hard fork
         consensus.may2018activationTime = 1526400000;
 
@@ -315,8 +311,6 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_CSV].windowsize = 2016;
         consensus.vDeployments[Consensus::DEPLOYMENT_CSV].threshold = 1512; // 75% of 2016
 
-        // Aug, 1 2017 hard fork
-        consensus.uahfHeight = 1155876;
         // May, 15 2018 hard fork
         consensus.may2018activationTime = 1526400000;
 
@@ -413,8 +407,6 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].windowsize = 144;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].threshold = 108; // 75% of 144
 
-        // Hard fork is always enabled on regtest.
-        consensus.uahfHeight = 0;
         // May, 15 2018 hard fork
         consensus.may2018activationTime = 1526400000;
 

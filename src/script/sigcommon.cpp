@@ -23,35 +23,6 @@
 
 namespace
 {
-uint256 GetPrevoutHash(const CTransaction &txTo)
-{
-    CHashWriter ss(SER_GETHASH, 0);
-    for (unsigned int n = 0; n < txTo.vin.size(); n++)
-    {
-        ss << txTo.vin[n].prevout;
-    }
-    return ss.GetHash();
-}
-
-uint256 GetSequenceHash(const CTransaction &txTo)
-{
-    CHashWriter ss(SER_GETHASH, 0);
-    for (unsigned int n = 0; n < txTo.vin.size(); n++)
-    {
-        ss << txTo.vin[n].nSequence;
-    }
-    return ss.GetHash();
-}
-
-uint256 GetOutputsHash(const CTransaction &txTo)
-{
-    CHashWriter ss(SER_GETHASH, 0);
-    for (unsigned int n = 0; n < txTo.vout.size(); n++)
-    {
-        ss << txTo.vout[n];
-    }
-    return ss.GetHash();
-}
 
 /**
  * Wrapper that serializes like CTransaction, but with the modifications
@@ -168,7 +139,6 @@ uint256 SignatureHashLegacy(const CScript &scriptCode,
     const CTransaction &txTo,
     unsigned int nIn,
     uint32_t nHashType,
-    const CAmount &amount,
     size_t *nHashedOut)
 {
     if (nIn >= txTo.vin.size())
@@ -210,76 +180,11 @@ uint256 SignatureHashLegacy(const CScript &scriptCode,
     return ss.GetHash();
 }
 
-// ONLY to be called with SIGHASH_FORKID set in nHashType!
-static uint256 SignatureHashBitcoinCash(const CScript &scriptCode,
-    const CTransaction &txTo,
-    unsigned int nIn,
-    uint32_t nHashType,
-    const CAmount &amount,
-    size_t *nHashedOut)
-{
-    uint256 hashPrevouts;
-    uint256 hashSequence;
-    uint256 hashOutputs;
-
-    if (!(nHashType & SIGHASH_ANYONECANPAY))
-    {
-        hashPrevouts = GetPrevoutHash(txTo);
-    }
-
-    if (!(nHashType & SIGHASH_ANYONECANPAY) && (nHashType & 0x1f) != SIGHASH_SINGLE &&
-        (nHashType & 0x1f) != SIGHASH_NONE)
-    {
-        hashSequence = GetSequenceHash(txTo);
-    }
-
-    if ((nHashType & 0x1f) != SIGHASH_SINGLE && (nHashType & 0x1f) != SIGHASH_NONE)
-    {
-        hashOutputs = GetOutputsHash(txTo);
-    }
-    else if ((nHashType & 0x1f) == SIGHASH_SINGLE && nIn < txTo.vout.size())
-    {
-        CHashWriter ss(SER_GETHASH, 0);
-        ss << txTo.vout[nIn];
-        hashOutputs = ss.GetHash();
-    }
-
-    CHashWriter ss(SER_GETHASH, 0);
-    // Version
-    ss << txTo.nVersion;
-    // Input prevouts/nSequence (none/all, depending on flags)
-    ss << hashPrevouts;
-    ss << hashSequence;
-    // The input being signed (replacing the scriptSig with scriptCode +
-    // amount). The prevout may already be contained in hashPrevout, and the
-    // nSequence may already be contain in hashSequence.
-    ss << txTo.vin[nIn].prevout;
-    ss << static_cast<const CScriptBase &>(scriptCode);
-    ss << amount;
-    ss << txTo.vin[nIn].nSequence;
-    // Outputs (none/one/all, depending on flags)
-    ss << hashOutputs;
-    // Locktime
-    ss << txTo.nLockTime;
-    // Sighash type
-    ss << nHashType;
-
-    uint256 sighash = ss.GetHash();
-    // printf("SigHash: %s\n", sighash.GetHex().c_str());
-    return sighash;
-}
-
-
 uint256 SignatureHash(const CScript &scriptCode,
     const CTransaction &txTo,
     unsigned int nIn,
     uint32_t nHashType,
-    const CAmount &amount,
     size_t *nHashedOut)
 {
-    if (nHashType & SIGHASH_FORKID)
-    {
-        return SignatureHashBitcoinCash(scriptCode, txTo, nIn, nHashType, amount, nHashedOut);
-    }
-    return SignatureHashLegacy(scriptCode, txTo, nIn, nHashType, amount, nHashedOut);
+    return SignatureHashLegacy(scriptCode, txTo, nIn, nHashType, nHashedOut);
 }

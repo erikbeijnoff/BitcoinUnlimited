@@ -41,7 +41,6 @@
 #include "txdb.h"
 #include "txmempool.h"
 #include "txorphanpool.h"
-#include "uahf_fork.h"
 #include "ui_interface.h"
 #include "undo.h"
 #include "util.h"
@@ -832,9 +831,7 @@ static bool AcceptToMemoryPoolWorker(CTxMemPool &pool,
 
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
-        unsigned char sighashType = 0;
-        if (!CheckInputs(*ptx, state, view, true, STANDARD_SCRIPT_VERIFY_FLAGS | extraFlags, true, &resourceTracker,
-                nullptr, &sighashType))
+        if (!CheckInputs(*ptx, state, view, true, STANDARD_SCRIPT_VERIFY_FLAGS | extraFlags, true, &resourceTracker))
         {
             LOG(MEMPOOL, "CheckInputs failed for tx: %s\n", ptx->GetHash().ToString().c_str());
             return false;
@@ -850,20 +847,11 @@ static bool AcceptToMemoryPoolWorker(CTxMemPool &pool,
         // There is a similar check in CreateNewBlock() to prevent creating
         // invalid blocks, however allowing such transactions into the mempool
         // can be exploited as a DoS attack.
-        unsigned char sighashType2 = 0;
-        if (!CheckInputs(*ptx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS | extraFlags, true, nullptr, nullptr,
-                &sighashType2))
+        if (!CheckInputs(*ptx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS | extraFlags, true, nullptr))
         {
             return error(
                 "%s: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags %s, %s",
                 __func__, hash.ToString(), FormatStateMessage(state));
-        }
-
-        entry.sighashType = sighashType | sighashType2;
-        // This code denies old style tx from entering the mempool as soon as we fork
-        if (IsUAHFforkActiveOnNextBlock(chainActive.Tip()->nHeight) && !IsTxUAHFOnly(entry))
-        {
-            return state.Invalid(false, REJECT_WRONG_FORK, "txn-uses-old-sighash-algorithm");
         }
 
         respend.SetValid(true);
@@ -1214,8 +1202,8 @@ void UpdateCoins(const CTransaction &tx, CValidationState &state, CCoinsViewCach
 bool CScriptCheck::operator()()
 {
     const CScript &scriptSig = ptxTo->vin[nIn].scriptSig;
-    CachingTransactionSignatureChecker checker(ptxTo, nIn, amount, nFlags, cacheStore);
-    if (!VerifyScript(scriptSig, scriptPubKey, nFlags, checker, &error, &sighashType))
+    CachingTransactionSignatureChecker checker(ptxTo, nIn, cacheStore);
+    if (!VerifyScript(scriptSig, scriptPubKey, nFlags, checker, &error))
         return false;
     if (resourceTracker)
         resourceTracker->Update(ptxTo->GetHash(), checker.GetNumSigops(), checker.GetBytesHashed());
@@ -1230,8 +1218,7 @@ bool CheckInputs(const CTransaction &tx,
     unsigned int flags,
     bool cacheStore,
     ValidationResourceTracker *resourceTracker,
-    std::vector<CScriptCheck> *pvChecks,
-    unsigned char *sighashType)
+    std::vector<CScriptCheck> *pvChecks)
 {
     if (!tx.IsCoinBase())
     {
@@ -1257,7 +1244,6 @@ bool CheckInputs(const CTransaction &tx,
                 const COutPoint &prevout = tx.vin[i].prevout;
 
                 CScript scriptPubKey;
-                CAmount amount;
                 {
                     LOCK(inputs.cs_utxo);
                     const Coin &coin = inputs.AccessCoin(prevout);
@@ -1271,11 +1257,10 @@ bool CheckInputs(const CTransaction &tx,
                     // failures through additional data in, eg, the coins being
                     // spent being checked as a part of CScriptCheck.
                     scriptPubKey = coin.out.scriptPubKey;
-                    amount = coin.out.nValue;
                 }
 
                 // Verify signature
-                CScriptCheck check(resourceTracker, scriptPubKey, amount, tx, i, flags, cacheStore);
+                CScriptCheck check(resourceTracker, scriptPubKey, tx, i, flags, cacheStore);
                 if (pvChecks)
                 {
                     pvChecks->push_back(CScriptCheck());
@@ -1298,7 +1283,7 @@ bool CheckInputs(const CTransaction &tx,
                         // strictly additive change and we would not like to ban some of
                         // our peer that are ahead of us and are considering the fork
                         // as activated.
-                        CScriptCheck check2(nullptr, scriptPubKey, amount, tx, i,
+                        CScriptCheck check2(nullptr, scriptPubKey, tx, i,
                             (flags & ~STANDARD_NOT_MANDATORY_VERIFY_FLAGS) | SCRIPT_ENABLE_MAY152018_OPCODES,
                             cacheStore);
                         if (check2())
@@ -1316,8 +1301,6 @@ bool CheckInputs(const CTransaction &tx,
                     return state.DoS(100, false, REJECT_INVALID, strprintf("mandatory-script-verify-flag-failed (%s)",
                                                                      ScriptErrorString(check.GetScriptError())));
                 }
-                if (sighashType)
-                    *sighashType = check.sighashType;
             }
         }
     }
@@ -1592,13 +1575,6 @@ static uint32_t GetBlockScriptFlags(const CBlockIndex *pindex, const Consensus::
         THRESHOLD_ACTIVE)
     {
         flags |= SCRIPT_VERIFY_CHECKSEQUENCEVERIFY;
-    }
-
-    // Start enforcing the UAHF fork
-    if (UAHFforkActivated(pindex->nHeight))
-    {
-        flags |= SCRIPT_VERIFY_STRICTENC;
-        flags |= SCRIPT_ENABLE_SIGHASH_FORKID;
     }
 
     // The May 15, 2018 HF enable a set of opcodes.
@@ -3388,24 +3364,6 @@ bool ContextualCheckBlock(const CBlock &block, CValidationState &state, CBlockIn
         }
     }
 
-    // UAHF enforce that the fork block is > 1MB
-    // (note subsequent blocks can be <= 1MB...)
-    // An exception is added -- if the fork block is block 1 then it can be <= 1MB.  This allows test chains to
-    // fork without having to create a large block so long as the fork time is in the past.
-    // TODO: check if we can remove the second conditions since on regtest uahHeight is 0
-    if (pindexPrev && UAHFforkAtNextBlock(pindexPrev->nHeight) && (pindexPrev->nHeight > 1))
-    {
-        DbgAssert(block.GetBlockSize(), );
-        if (block.GetBlockSize() <= BLOCKSTREAM_CORE_MAX_BLOCK_SIZE)
-        {
-            uint256 hash = block.GetHash();
-            return state.DoS(100,
-                error("%s: UAHF fork block (%s, height %d) must exceed %d, but this block is %d bytes", __func__,
-                                 hash.ToString(), nHeight, BLOCKSTREAM_CORE_MAX_BLOCK_SIZE, block.GetBlockSize()),
-                REJECT_INVALID, "bad-blk-too-small");
-        }
-    }
-
     return true;
 }
 
@@ -4851,17 +4809,13 @@ void static ProcessGetData(CNode *pfrom, const Consensus::Params &consensusParam
                     CTxMemPoolEntry txe;
                     if (mempool.lookup(inv.hash, txe))
                     {
-                        // Only offer a TX to the fork if its signed properly
-                        if (!(!IsTxUAHFOnly(txe) && IsUAHFforkActiveOnNextBlock(chainActive.Tip()->nHeight)))
-                        {
-                            CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-                            ss.reserve(1000);
-                            ss << txe.GetTx();
-                            pfrom->PushMessage(NetMsgType::TX, ss);
-                            fPushed = true;
-                            pfrom->txsSent += 1;
-                        }
-                    }
+                        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+                        ss.reserve(1000);
+                        ss << txe.GetTx();
+                        pfrom->PushMessage(NetMsgType::TX, ss);
+                        fPushed = true;
+                        pfrom->txsSent += 1;
+                   }
                 }
                 if (!fPushed)
                 {
@@ -5562,21 +5516,17 @@ bool ProcessMessage(CNode *pfrom, std::string strCommand, CDataStream &vRecv, in
         }
         else if (fMissingInputs)
         {
-            // If we've forked and this is probably not a valid tx, then skip adding it to the orphan pool
-            if (!IsUAHFforkActiveOnNextBlock(chainActive.Tip()->nHeight) || IsTxProbablyNewSigHash(tx))
-            {
-                LOCK(orphanpool.cs);
-                orphanpool.AddOrphanTx(ptx, pfrom->GetId());
+            LOCK(orphanpool.cs);
+            orphanpool.AddOrphanTx(ptx, pfrom->GetId());
 
-                // DoS prevention: do not allow mapOrphanTransactions to grow unbounded
-                static unsigned int nMaxOrphanTx =
-                    (unsigned int)std::max((int64_t)0, GetArg("-maxorphantx", DEFAULT_MAX_ORPHAN_TRANSACTIONS));
-                static uint64_t nMaxOrphanPoolSize =
-                    (uint64_t)std::max((int64_t)0, (GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000 / 10));
-                unsigned int nEvicted = orphanpool.LimitOrphanTxSize(nMaxOrphanTx, nMaxOrphanPoolSize);
-                if (nEvicted > 0)
-                    LOG(MEMPOOL, "mapOrphan overflow, removed %u tx\n", nEvicted);
-            }
+            // DoS prevention: do not allow mapOrphanTransactions to grow unbounded
+            static unsigned int nMaxOrphanTx =
+                (unsigned int)std::max((int64_t)0, GetArg("-maxorphantx", DEFAULT_MAX_ORPHAN_TRANSACTIONS));
+            static uint64_t nMaxOrphanPoolSize =
+                (uint64_t)std::max((int64_t)0, (GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000 / 10));
+            unsigned int nEvicted = orphanpool.LimitOrphanTxSize(nMaxOrphanTx, nMaxOrphanPoolSize);
+            if (nEvicted > 0)
+                LOG(MEMPOOL, "mapOrphan overflow, removed %u tx\n", nEvicted);
         }
         else
         {
@@ -6203,9 +6153,6 @@ bool ProcessMessage(CNode *pfrom, std::string strCommand, CDataStream &vRecv, in
                 if (!fInMemPool)
                     continue; // another thread removed since queryHashes, maybe...
                 if (!pfrom->pfilter->IsRelevantAndUpdate(txe.GetTx()))
-                    continue;
-                // don't relay old-style transactions after the fork.
-                if (!IsTxUAHFOnly(txe) && IsUAHFforkActiveOnNextBlock(chainActive.Tip()->nHeight))
                     continue;
             }
             vInv.push_back(inv);
