@@ -192,11 +192,9 @@ public:
                 225430, uint256S("0x00000000000001c108384350f74090433e7fcf79a606b8e797f065b130575932"))(
                 250000, uint256S("0x000000000000003887df1f29024b06fc2200b55f8af8f35453d7be294df2d214"))(
                 279000, uint256S("0x0000000000000001ae8c72a0b0c301f67e3afca10e819efa9041e458e9bd7e40"))(
-                295000, uint256S("0x00000000000000004d9b4ef50f0f9d686fd69db2e03af35a100370c64632a983"))(
-                // May 15th 2018 re-enable op_codes and 32 MB max block size
-                530359, uint256S("0x0000000000000000011ada8bd08f46074f44a8f155396f43e38acf9501c49103")),
-            1526410186, // * UNIX timestamp of last checkpoint block
-            249416375, // * total number of transactions between genesis and last checkpoint
+                295000, uint256S("0x00000000000000004d9b4ef50f0f9d686fd69db2e03af35a100370c64632a983")),
+            /* nTime    */ 1532884444,
+            /* nTxCount */ 331282217,
             //   (the tx=... number in the SetBestChain debug.log lines)
             280000.0 // * estimated number of transactions per day after checkpoint (~3.5 TPS)
         };
@@ -353,9 +351,10 @@ public:
 
         checkpointData =
             (CCheckpointData){boost::assign::map_list_of(546,
-                                  uint256S("000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70"))(1155876,
-                                  uint256S("00000000000e38fef93ed9582a7df43815d5c2ba9fd37ef70c9a0ea4a285b8f5")),
-                1501616524, 1488, 300};
+                                  uint256S("000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70")),
+                             /* nTime    */ 1531929919,
+                             /* nTxCount */ 19438708,
+                                                  300};
     }
 };
 static CTestNetParams testNetParams;
