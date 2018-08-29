@@ -151,11 +151,13 @@ public:
             genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
 
         // List of Bitcoin Cash compatible seeders
-        vSeeds.push_back(CDNSSeedData("bitcoinunlimited.info", "btccash-seeder.bitcoinunlimited.info", true));
-        vSeeds.push_back(CDNSSeedData("bitcoinabc.org", "seed.bitcoinabc.org", true));
-        vSeeds.push_back(CDNSSeedData("bitcoinforks.org", "seed-abc.bitcoinforks.org", true));
-        vSeeds.push_back(CDNSSeedData("bitprim.org", "seed.bitprim.org", true)); // Bitprim
-        vSeeds.push_back(CDNSSeedData("deadalnix.me", "seed.deadalnix.me", true)); // Amaury SÉCHET
+        vSeeds.push_back(CDNSSeedData("sipa.be", "seed.bitcoin.sipa.be", true)); // Pieter Wuille, only supports x1, x5, x9, and xd
+        vSeeds.push_back(CDNSSeedData("bluematt.me", "dnsseed.bluematt.me", true)); // Matt Corallo, only supports x9
+        vSeeds.push_back(CDNSSeedData("dashjr.org", "dnsseed.bitcoin.dashjr.org", true)); // Luke Dashjr
+        vSeeds.push_back(CDNSSeedData("bitcoinstats.com", "seed.bitcoinstats.com", true)); // Christian Decker, supports x1 - xf
+        vSeeds.push_back(CDNSSeedData("jonasschnelli.ch", "seed.bitcoin.jonasschnelli.ch", true)); // Jonas Schnelli, only supports x1, x5, x9, and xd
+        vSeeds.push_back(CDNSSeedData("petertodd.org", "seed.btc.petertodd.org", true)); // Peter Todd, only supports x1, x5, x9, and xd
+        vSeeds.push_back(CDNSSeedData("sprovoost.nl", "seed.bitcoin.sprovoost.nl", true)); // Sjors Provoost
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1, 0);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1, 5);
@@ -247,7 +249,7 @@ public:
 
         vFixedSeeds.clear();
         vSeeds.clear();
-        vSeeds.push_back(CDNSSeedData("bitcoinunlimited.info", "nolnet-seed.bitcoinunlimited.info", true));
+//        vSeeds.push_back(CDNSSeedData("testnet-seed.bitcoin.jonasschnelli.ch"));
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1, 25); // P2PKH addresses begin with B
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1, 68); // P2SH  addresses begin with U
@@ -328,18 +330,10 @@ public:
         vSeeds.clear();
         // nodes with support for servicebits filtering should be at the top
 
-        // Bitcoin ABC seeder
-        vSeeds.push_back(CDNSSeedData("bitcoinabc.org", "testnet-seed.bitcoinabc.org", true));
-        // bitcoinforks seeders
-        vSeeds.push_back(CDNSSeedData("bitcoinforks.org", "testnet-seed-abc.bitcoinforks.org", true));
-        // BU seeder
-        vSeeds.push_back(CDNSSeedData("bitcoinunlimited.info", "testnet-seed.bitcoinunlimited.info", true));
-        // Bitprim
-        vSeeds.push_back(CDNSSeedData("bitprim.org", "testnet-seed.bitprim.org", true));
-        // Amaury SÉCHET
-        vSeeds.push_back(CDNSSeedData("deadalnix.me", "testnet-seed.deadalnix.me", true));
-        // criptolayer.net
-        vSeeds.push_back(CDNSSeedData("criptolayer.net", "testnet-seeder.criptolayer.net", true));
+        vSeeds.push_back(CDNSSeedData("jonasschnelli.ch", "testnet-seed.bitcoin.jonasschnelli.ch", true));
+        vSeeds.push_back(CDNSSeedData("petertodd.org", "seed.tbtc.petertodd.org", true));
+        vSeeds.push_back(CDNSSeedData("sprovoost.nl", "seed.testnet.bitcoin.sprovoost.nl", true));
+        vSeeds.push_back(CDNSSeedData("bluematt.me", "testnet-seed.bluematt.me", true)); // Just a static list of stable node(s), only supports x9
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<uint8_t>(1, 111);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<uint8_t>(1, 196);
